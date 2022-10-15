@@ -38,7 +38,7 @@ module.exports = {
                     exp})
             }
         } catch (error) {
-            console.log('ERROR IN register')
+            console.log('Error with registration')
             console.log(error)
             res.sendStatus(400)
         }
