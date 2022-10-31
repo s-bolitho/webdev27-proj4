@@ -19,12 +19,14 @@ const calculateRemainingTime = (exp) => {
 const getLocalData = () => {
   const storedToken = localStorage.getItem('token')
   const storedExp = localStorage.getItem('exp')
+  const storedId = localStorage.getItem('userId')
 
   const remainingTime = calculateRemainingTime(storedExp)
 
   if (remainingTime <= 1000 * 60 * 30) {
     localStorage.removeItem('token')
     localStorage.removeItem('exp')
+    localStorage.removeItem('userId')
     return null
   }
 
@@ -32,6 +34,7 @@ const getLocalData = () => {
   return {
     token: storedToken,
     duration: remainingTime,
+    userId: storedId
   }
 }
 
@@ -41,29 +44,46 @@ export const AuthContextProvider = (props) => {
   const localData = getLocalData()
   
   let initialToken
+  let initialId
   if (localData) {
     initialToken = localData.token
+    initialId = localData.userId
   }
 
   const [token, setToken] = useState(initialToken)
-  const [userId, setUserId] = useState(null)
+  const [userId, setUserId] = useState(initialId)
 
 
-  const logout = () => {}
+  const logout = useCallback(() => {
+    setToken(null)
+    setUserId(null)
+    localStorage.removeItem('token')
+    localStorage.removeItem('exp')
+    localStorage.removeItem('userId')
 
-  const login = (token, expiration, userId) => {
+    if (logoutTimer) {
+      clearTimeout(logoutTimer)
+    }
+  }, [])
 
-    setToken(token);
-    setUserId(userId);
+  const login = (token, exp, userId) => {
+    setToken(token)
+    setUserId(userId)
 
-    localStorage.setItem('token', token);
-    localStorage.setItem('expiration', expiration);
-    localStorage.setItem('userId', userId);
+    localStorage.setItem('token', token)
+    localStorage.setItem('exp', exp)
+    localStorage.setItem('userId', userId)
 
-    const remainingTime = calculateRemainingTime(expiration);
+    const remainingTime = calculateRemainingTime(exp)
 
-    logoutTimer = setTimeout(logout, remainingTime);
+    logoutTimer = setTimeout(logout, remainingTime)
   }
+
+  useEffect(() => {
+    if (localData) {
+      logoutTimer = setTimeout(logout, localData.duration)
+    }
+  }, [localData, logout])
 
   const contextValue = {
     token,
@@ -79,4 +99,4 @@ export const AuthContextProvider = (props) => {
   )
 }
 
-export default AuthContext
+export default AuthContext;
